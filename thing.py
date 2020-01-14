@@ -8,26 +8,34 @@ from time import monotonic as clock
 import config as conf
 
 class Thing:
-    def __init__(self, game_height, game_width, x=0, y=0):
+    def __init__(self, game_height, game_width, pos=np.array([0, 0]), size=np.array([1, 1])):
+
+        if type(game_height) != int or type(game_width) != int\
+             or type(pos) != np.ndarray or type(size) != np.ndarray:
+            raise ValueError('Invalid arguments')
+
         self.game_h = game_height
         self.game_w = game_width
         
-        self.pos = np.array([x, y])
-        self.size = np.array([3, 3]) # h, w
-        self.vel = np.array([0, 0])  # v_x, v_y
+        self.pos = pos
+        self.size = size # h, w
+        self.vel = np.array([0, -conf.GAME_SPEED])  # v_x, v_y
         self.acc = np.array([conf.GRAVITY_X, conf.GRAVITY_Y]) # a_x, a_y
 
-        self.repr_back = None
-        self.repr_front = np.array([['Q' for j in range(self.size[1])] for i in range(self.size[0])])
+        self.repr = np.array([[' ' for j in range(self.size[1])] for i in range(self.size[0])], dtype='object')
 
     def show(self):
-        return np.round(self.pos).astype(np.int32), np.round(self.size).astype(np.int32), self.repr_back, self.repr_front
+        return np.round(self.pos).astype(np.int32), np.round(self.size).astype(np.int32), self.repr
 
     def is_aground(self):
         return int(round(self.pos[0] + self.size[0])) >= self.game_h - conf.GND_HEIGHT
 
     def is_high(self):
         return int(round(self.pos[0])) <= conf.SKY_DEPTH
+
+    def is_out(self):
+        # T, L, B, R
+        return (self.pos[0] < 0), (self.pos[1] < 0), (self.pos[0] >= self.game_h), (self.pos[1] >= self.game_w)
 
     def move(self):
         
@@ -40,7 +48,7 @@ class Thing:
             if self.vel[0] > 0:
                 self.pos[0] = self.game_h - conf.GND_HEIGHT - self.size[0]
                 self.vel[0] = 0
-                conf.GRAVITY_X = -conf.GRAVITY_X
+                # conf.GRAVITY_X = -conf.GRAVITY_X
             if self.acc[0] > 0:
                 self.acc[0] = 0
             return
@@ -49,7 +57,7 @@ class Thing:
             if self.vel[0] < 0:
                 self.pos[0] = conf.SKY_DEPTH
                 self.vel[0] = 0
-                conf.GRAVITY_X = -conf.GRAVITY_X
+                # conf.GRAVITY_X = -conf.GRAVITY_X
             if self.acc[0] < 0:
                 self.acc[0] = 0
             return
