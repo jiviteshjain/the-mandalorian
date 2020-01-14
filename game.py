@@ -7,6 +7,7 @@ from time import monotonic as clock
 
 from screen import Screen
 import config as conf
+from thing import Thing
 
 
 class Game:
@@ -22,11 +23,18 @@ class Game:
 
         self._screen = Screen(self.height, self.width)
 
+    def setup(self):
+        self.obj = Thing(self.height, self.width, x = conf.SKY_DEPTH)
+
     def play(self):
+        self.setup()
         while True:
             start_time = clock()
             print(random.randint(0, 4))
+            self._screen.add(self.obj)
             self._screen.print_board()
+            self._screen.clear()
+            self.obj.move()
             while clock() - start_time < 0.1:
                 pass
 
