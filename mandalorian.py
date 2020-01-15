@@ -15,10 +15,11 @@ class Mandalorian(Thing):
         super().__init__(game_height, game_width, np.array([game_height - conf.GND_HEIGHT - 4, y]), np.array([4, 3]))
         self.acc = np.array([conf.GRAVITY_X, conf.GRAVITY_Y])
         self.repr = np.array([
-            [' ', '_', ' '],
-            ['|', 'O', '`'],
-            ['[', ' ', ']'],
-            [' ', 'J', 'L']
+            [' ', Fore.CYAN + Style.BRIGHT + '_', ' '],
+            [Fore.CYAN + Style.BRIGHT + '|', Fore.GREEN +
+                Style.BRIGHT + 'O', Fore.CYAN + Style.BRIGHT + '`'],
+            [Fore.CYAN + Style.BRIGHT + '[', Style.BRIGHT + Back.GREEN + ' ', Fore.CYAN + Style.BRIGHT + ']'],
+            [' ', Fore.CYAN + Style.BRIGHT + 'J', Fore.CYAN + Style.BRIGHT + 'L']
         ], dtype='object')
 
     def nudge(self, key):
@@ -41,3 +42,22 @@ class Mandalorian(Thing):
             drag = conf.DRAG_COEFF * ((self.vel[1] + conf.GAME_SPEED)** 2)
             
         self.acc[1] += drag
+
+    def move(self):
+        super().move()
+
+        t, l, b, r = self.is_out()
+
+        if l:
+            if self.vel[1] < 0:
+                self.pos[1] = 0
+                self.vel[1] = 0
+            if self.acc[1] < 0:
+                self.acc[1] = 0
+
+        if r:
+            if self.vel[1] > 0:
+                self.pos[1] = self.game_w - self.size[1]
+                self.vel[1] = 0
+            if self.acc[1] > 0:
+                self.acc[1] = 0
