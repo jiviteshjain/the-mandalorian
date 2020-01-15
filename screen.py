@@ -59,6 +59,8 @@ class Screen:
         y_start = pos[1]
         y_end = pos[1] + size[1]
 
+        # print(x_start, x_end, y_start, y_end)
+        # print(front)
         self._fore_board[x_start:x_end, y_start:y_end] = front
 
     def print_board(self):

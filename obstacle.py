@@ -29,8 +29,6 @@ class FireBeam(Thing):
 
         super().__init__(game_height, game_width, np.array([x, y]), size_arr)
 
-        self.acc = np.array([0, 0])
-
         if direction == self.DIR_HOR or direction == self.DIR_VERT:
             for i in range(self.size[0]):
                 for j in range(self.size[1]):
