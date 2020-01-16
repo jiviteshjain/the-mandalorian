@@ -22,6 +22,11 @@ class Mandalorian(Thing):
             [' ', Fore.CYAN + Style.BRIGHT + 'J', Fore.CYAN + Style.BRIGHT + 'L']
         ], dtype='object')
 
+    def is_out(self):
+        # T, L, B, R
+        # Checks if entire mandalorian is on screen
+        return (self.pos[0] < 0), (self.pos[1] < 0), (self.pos[0] + self.size[0] - 1 >= self.game_h), (self.pos[1] + self.size[1] - 1 >= self.game_w)
+
     def nudge(self, key):
         if key == 'w':
             self.acc[0] -= conf.KEY_FORCE

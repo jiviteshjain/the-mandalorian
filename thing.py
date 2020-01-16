@@ -35,7 +35,8 @@ class Thing:
 
     def is_out(self):
         # T, L, B, R
-        return (self.pos[0] < 0), (self.pos[1] < 0), (self.pos[0] + self.size[0] >= self.game_h), (self.pos[1] + self.size[1] >= self.game_w)
+        # Returns true iff all of the object is out in that direction
+        return (self.pos[0] + self.size[0] - 1 < 0), (self.pos[1] + self.size[1] - 1 < 0), (self.pos[0] >= self.game_h), (self.pos[1] >= self.game_w)
 
     def calc_acc(self):
         self.acc = np.array([0, 0], dtype='float32')

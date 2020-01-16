@@ -36,12 +36,23 @@ class Game:
 
         self._screen = Screen(self.height, self.width)
         self.keyboard = KBHit()
+        self.frame_count = 0
 
     def setup(self):
         # self.obj = Thing(self.height, self.width, x = conf.SKY_DEPTH, y = self.width - conf.BUFFER_RIGHT - 3)
         self.fire_beams = []
-        self.fire_beams.append(FireBeam(self.height, self.width, 4, FireBeam.DIR_DIA_DOWN, conf.SKY_DEPTH, self.width - 4))
         self.player = Mandalorian(self.height, self.width, conf.MANDALORIAN_START_Y)
+
+    def build_world(self):
+        if self.frame_count % conf.MIN_BEAM_DIST_X == 0:
+            num = random.randint(0, 2)
+            if num != 0:
+                part = (self.height - conf.SKY_DEPTH - conf.GND_HEIGHT) / num
+                for i in range(num):
+                    direc = random.randint(0, 3)
+                    size = random.randint(conf.MIN_BEAM_SIZE, conf.MAX_BEAM_SIZE - num)
+                    self.fire_beams.append(FireBeam(self.height, self.width, size, direc, random.randint(conf.SKY_DEPTH, self.height - conf.GND_HEIGHT - size), self.width))
+
 
     def remove_old_objs(self):
         for fb in self.fire_beams:
@@ -113,7 +124,7 @@ class Game:
         while True:
             start_time = clock()
             print(random.randint(0, 4))
-
+            self.build_world()
             self.calc_acc_objs()
             self.handle_input()
             self.move_objs()
@@ -123,7 +134,7 @@ class Game:
             
             self._screen.print_board()
             self._screen.clear()
-
+            self.frame_count += 1
             while clock() - start_time < 0.1:
                 pass
 

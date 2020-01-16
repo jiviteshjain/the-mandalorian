@@ -52,16 +52,42 @@ class Screen:
                 self._fore_board[i][j] = ' '
 
     def add(self, obj):
+        if True in obj.is_out():
+            return
+
         pos, size, front = obj.show()
         
         x_start = pos[0]
+        x_start_ = 0
         x_end = pos[0] + size[0]
+        x_end_ = size[0]
         y_start = pos[1]
+        y_start_ = 0
         y_end = pos[1] + size[1]
+        y_end_ = size[1]
 
-        # print(x_start, x_end, y_start, y_end)
-        # print(front)
-        self._fore_board[x_start:x_end, y_start:y_end] = front
+        # Now make sure if half the object is visible, it is rendered correctly
+
+        if x_start < 0:
+            x_start_ = 0 - x_start
+            x_start = 0
+
+        if y_start < 0:
+            y_start_ = 0 - y_start
+            y_start = 0
+
+        if x_end > self._height:
+            x_end_ = self._height - pos[0]
+            x_end = self._height
+
+        if y_end > self._width:
+            y_end_ = self._width - pos[1]
+            y_end = self._width
+
+        try:
+            self._fore_board[x_start:x_end, y_start:y_end] = front[x_start_:x_end_, y_start_:y_end_]
+        except (IndexError, ValueError) as e:
+            return
 
     def print_board(self):
         print(self.CURSOR_0)
