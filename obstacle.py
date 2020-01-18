@@ -40,5 +40,13 @@ class FireBeam(Thing):
             for i in range(size):
                 self.repr[i][size - 1 - i] = Back.YELLOW + Style.BRIGHT + Fore.RED + '#'
 
+class Coin(Thing):
 
+    def __init__(self, game_height, game_width, x=0, y=0):
+        if type(x) != int or type(y) != int:
+            raise ValueError
+
+        super().__init__(game_height, game_width, np.array([x, y], dtype='float32'), np.array([1, 1]))
+
+        self.repr = np.array([[Fore.YELLOW + Style.BRIGHT + '$']], dtype='object')
 

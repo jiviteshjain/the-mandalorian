@@ -5,10 +5,12 @@ from colorama import Fore, Back, Style
 import random
 
 import config as conf
+from utils import get_art
 
 class Screen:
 
     CURSOR_0 = "\033[0;0H"
+    # CLOUD_REPR = None
 
     def __init__(self, height, width):
         self._height = height
@@ -28,6 +30,18 @@ class Screen:
         for i in range(conf.SKY_DEPTH):
             for j in range(self._width):
                 self._back_board[i][j] = conf.SKY_COLOR
+        
+
+        # self.CLOUD_REPR = get_art(conf.ART_CLOUD_PATH)
+        # if conf.NUM_CLOUDS > 0:
+        #     cloud_part = int(self._width / conf.NUM_CLOUDS)
+        #     for i in range(conf.NUM_CLOUDS):
+        #         start_y = random.randint(i * cloud_part, (i + 1) * cloud_part - self.CLOUD_REPR.shape[1])
+        #         start_x = random.randint(conf.SKY_DEPTH, conf.SKY_DEPTH + 3)
+        #         for j in range(self.CLOUD_REPR.shape[0]):
+        #             for k in range(self.CLOUD_REPR.shape[1]):
+        #                 self._back_board[start_x + j][start_y + k] += (Fore.BLACK + self.CLOUD_REPR[j][k])
+        
 
         self._fore_board = np.array([[' ' for j in range(self._width)] for i in range(self._height)], dtype='object')
 
@@ -89,9 +103,9 @@ class Screen:
         except (IndexError, ValueError) as e:
             return
 
-    def print_board(self):
+    def print_board(self, frame_count):
         print(self.CURSOR_0)
         for i in range(self._height):
             for j in range(self._width):
-                print(self._back_board[i][j] + self._fore_board[i][j], end='')
+                print(self._back_board[i][(j + frame_count) % self._width] + self._fore_board[i][j], end='')
             print('')

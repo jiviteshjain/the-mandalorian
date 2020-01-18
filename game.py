@@ -11,7 +11,7 @@ from thing import Thing
 from obstacle import FireBeam
 from kbhit import KBHit
 from mandalorian import Mandalorian
-from utils import intersect
+from utils import intersect, make_coin_group
 
 #    |
 #  --+-----> Y
@@ -41,37 +41,71 @@ class Game:
     def setup(self):
         # self.obj = Thing(self.height, self.width, x = conf.SKY_DEPTH, y = self.width - conf.BUFFER_RIGHT - 3)
         self.fire_beams = []
+        self.coins = []
         self.player = Mandalorian(self.height, self.width, conf.MANDALORIAN_START_Y)
+
+    def build_firebeam(self):
+        num = random.randint(0, 2)
+        if num != 0:
+            part = (self.height - conf.SKY_DEPTH - conf.GND_HEIGHT) / num
+            for i in range(num):
+                direc = random.randint(0, 3)
+                size = random.randint(
+                    conf.MIN_BEAM_SIZE, conf.MAX_BEAM_SIZE - num)
+                self.fire_beams.append(FireBeam(self.height, self.width, size, direc, random.randint(
+                    conf.SKY_DEPTH, self.height - conf.GND_HEIGHT - size), self.width))
+
+    def build_coins(self):
+        h = random.randint(conf.MIN_COIN_SIZE, conf.MAX_COIN_SIZE)
+        w = random.randint(conf.MIN_COIN_SIZE, conf.MAX_COIN_SIZE)
+
+        x = random.randint(conf.SKY_DEPTH, self.height - conf.GND_HEIGHT - h)
+
+        self.coins.extend(make_coin_group(self.height, self.width, x, self.width, h, w))
+
 
     def build_world(self):
         if self.frame_count % conf.MIN_BEAM_DIST_X == 0:
-            num = random.randint(0, 2)
-            if num != 0:
-                part = (self.height - conf.SKY_DEPTH - conf.GND_HEIGHT) / num
-                for i in range(num):
-                    direc = random.randint(0, 3)
-                    size = random.randint(conf.MIN_BEAM_SIZE, conf.MAX_BEAM_SIZE - num)
-                    self.fire_beams.append(FireBeam(self.height, self.width, size, direc, random.randint(conf.SKY_DEPTH, self.height - conf.GND_HEIGHT - size), self.width))
+            self.build_firebeam()
+
+        if random.random() < 0.1:
+            self.build_coins()
 
 
     def remove_old_objs(self):
         for fb in self.fire_beams:
             if fb.is_out()[1]:
                 self.fire_beams.remove(fb)
+        
+        for co in self.coins:
+            if co.is_out()[1]:
+                self.coins.remove(co)
 
     def paint_objs(self):
         for fb in self.fire_beams:
             self._screen.add(fb)
+
+        for co in self.coins:
+            self._screen.add(co)
+
         self._screen.add(self.player)
 
     def move_objs(self):
         for fb in self.fire_beams:
             fb.move()
+
+        for co in self.coins:
+            co.move()
+
         self.player.move()
 
     def calc_acc_objs(self):
         for fb in self.fire_beams:
             fb.calc_acc()
+
+        for co in self.coins:
+            co.calc_acc()
+
         self.player.calc_acc()
 
     def handle_input(self):
@@ -132,7 +166,7 @@ class Game:
             self.remove_old_objs()
             self.paint_objs()
             
-            self._screen.print_board()
+            self._screen.print_board(self.frame_count)
             self._screen.clear()
             self.frame_count += 1
             while clock() - start_time < 0.1:
