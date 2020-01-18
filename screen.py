@@ -3,6 +3,7 @@ import numpy as np
 from colorama import init as cinit
 from colorama import Fore, Back, Style
 import random
+import time
 
 import config as conf
 from utils import get_art
@@ -109,3 +110,15 @@ class Screen:
             for j in range(self._width):
                 print(self._back_board[i][(j + frame_count) % self._width] + self._fore_board[i][j], end='')
             print('')
+
+    def flash(self, color, frame_count):
+        temp = np.array([[color for j in range(self._width)] for i in range(self._height)], dtype='object')
+        for _ in range(3):
+            print(self.CURSOR_0)
+            for i in range(self._height):
+                for j in range(self._width):
+                    print(temp[i][j], end='')
+                print('')
+            time.sleep(0.1)
+            self.print_board(frame_count)
+            time.sleep(0.2)

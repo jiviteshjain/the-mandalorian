@@ -3,7 +3,7 @@ import numpy as np
 from colorama import init as cinit
 from colorama import Fore, Back, Style
 import random
-from time import monotonic as clock
+from time import monotonic as clock, sleep
 
 from screen import Screen
 import config as conf
@@ -38,11 +38,14 @@ class Game:
         self.keyboard = KBHit()
         self.frame_count = 0
 
-    def setup(self):
-        # self.obj = Thing(self.height, self.width, x = conf.SKY_DEPTH, y = self.width - conf.BUFFER_RIGHT - 3)
+        self.lives = conf.MAX_LIVES
+        self.score = 0
+        self.init_time = clock()
+
         self.fire_beams = []
         self.coins = []
         self.player = Mandalorian(self.height, self.width, conf.MANDALORIAN_START_Y)
+        
 
     def build_firebeam(self):
         num = random.randint(0, 2)
@@ -68,9 +71,28 @@ class Game:
         if self.frame_count % conf.MIN_BEAM_DIST_X == 0:
             self.build_firebeam()
 
-        if random.random() < 0.1:
+        if random.random() < 0.02:
             self.build_coins()
 
+    def handle_beam_collisions(self):
+        for fb in self.fire_beams:
+            if self.check_collision(self.player, fb):
+                self.lives -= 1
+                if self.lives == 0:
+                    self.game_over()
+                else:
+                    self._screen.flash(Back.RED + ' ', self.frame_count)
+                    self.fire_beams.remove(fb)
+
+    def handle_coin_collisions(self):
+        for co in self.coins:
+            if self.check_collision(self.player, co, cheap=True, buffer=True):
+                self.score += 1
+                self.coins.remove(co)
+
+    def handle_collisions(self):
+        self.handle_beam_collisions()
+        self.handle_coin_collisions()
 
     def remove_old_objs(self):
         for fb in self.fire_beams:
@@ -122,18 +144,31 @@ class Game:
 
     def game_over(self):
         self.keyboard.set_normal_term()
+        print(Style.RESET_ALL)
+        raise SystemExit
         pass
     
-    def check_collision(self, obj_a, obj_b):
+    def check_collision(self, obj_a, obj_b, cheap=False, buffer=False):
+        # Buffering only done for second object
+        if buffer and not cheap:
+            raise ValueError
 
         a_pos, a_size, a_repr = obj_a.show()
         b_pos, b_size, b_repr = obj_b.show()
 
+        
+
         a_rec = [a_pos[0], a_pos[0] + a_size[0] - 1, a_pos[1], a_pos[1] + a_size[1] - 1]
-        b_rec = [b_pos[0], b_pos[0] + b_size[0] - 1, b_pos[1], b_pos[1] + b_size[1] - 1]
+        if buffer:
+            b_rec = [b_pos[0] - 1, b_pos[0] + b_size[0], b_pos[1] - 1, b_pos[1] + b_size[1]]
+        else:
+            b_rec = [b_pos[0], b_pos[0] + b_size[0] - 1, b_pos[1], b_pos[1] + b_size[1] - 1]
 
         bump, common = intersect(a_rec, b_rec)
-
+        
+        if cheap or buffer:
+            return bump
+        
         if not bump:
             return False
 
@@ -154,7 +189,6 @@ class Game:
         return False
 
     def play(self):
-        self.setup()
         while True:
             start_time = clock()
             print(random.randint(0, 4))
@@ -165,10 +199,13 @@ class Game:
 
             self.remove_old_objs()
             self.paint_objs()
+
+            self.handle_collisions()
             
             self._screen.print_board(self.frame_count)
             self._screen.clear()
             self.frame_count += 1
             while clock() - start_time < 0.1:
                 pass
+            
 
