@@ -21,11 +21,31 @@ class Mandalorian(Thing):
             [Fore.CYAN + Style.BRIGHT + '[', Style.BRIGHT + Back.GREEN + ' ', Fore.CYAN + Style.BRIGHT + ']'],
             [' ', Fore.CYAN + Style.BRIGHT + 'J', Fore.CYAN + Style.BRIGHT + 'L']
         ], dtype='object')
+        self.repr_shield = np.array([
+            [' ', Fore.CYAN + Style.BRIGHT + '_', ' '],
+            [Fore.CYAN + Style.BRIGHT + '|', Fore.GREEN +
+                Style.BRIGHT + 'O', Fore.CYAN + Style.BRIGHT + '`'],
+            [Fore.CYAN + Style.BRIGHT + '[', Style.BRIGHT +
+                Back.BLACK + ' ', Fore.CYAN + Style.BRIGHT + ']'],
+            [' ', Fore.CYAN + Style.BRIGHT + 'J', Fore.CYAN + Style.BRIGHT + 'L']
+        ], dtype='object')
+        self.shield = False
 
     def is_out(self):
         # T, L, B, R
         # Checks if entire mandalorian is on screen
         return (self.pos[0] < 0), (self.pos[1] < 0), (self.pos[0] + self.size[0] - 1 >= self.game_h), (self.pos[1] + self.size[1] - 1 >= self.game_w)
+
+    def show(self):
+        if not self.shield:
+            return np.round(self.pos).astype(np.int32), self.size, self.repr
+        else:
+            return np.round(self.pos).astype(np.int32), self.size, self.repr_shield
+
+    def set_shield(self, what):
+        if type(what) != bool:
+            raise ValueError
+        self.shield = what
 
     def nudge(self, key):
         if key == 'w':

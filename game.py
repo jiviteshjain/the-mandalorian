@@ -8,7 +8,7 @@ from time import monotonic as clock, sleep
 from screen import Screen
 import config as conf
 from thing import Thing
-from obstacle import FireBeam
+from obstacle import FireBeam, MandalorianBullet
 from kbhit import KBHit
 from mandalorian import Mandalorian
 from utils import intersect, make_coin_group
@@ -22,7 +22,7 @@ from utils import intersect, make_coin_group
 
 class Game:
 
-    PLAY_KEYS = ('w', 'a', 'd', ' ', 'e')
+    PLAY_KEYS = ('w', 'a', 'd')
     CONTROL_KEYS = ('q', )
 
     def __init__(self):
@@ -44,7 +44,11 @@ class Game:
 
         self.fire_beams = []
         self.coins = []
+        self.mandalorian_bullets = []
         self.player = Mandalorian(self.height, self.width, conf.MANDALORIAN_START_Y)
+
+        self.shield = False
+        self.shield_time = clock()
         
 
     def build_firebeam(self):
@@ -65,7 +69,6 @@ class Game:
         x = random.randint(conf.SKY_DEPTH, self.height - conf.GND_HEIGHT - h)
 
         self.coins.extend(make_coin_group(self.height, self.width, x, self.width, h, w))
-
 
     def build_world(self):
         if self.frame_count % conf.MIN_BEAM_DIST_X == 0:
@@ -90,9 +93,39 @@ class Game:
                 self.score += 1
                 self.coins.remove(co)
 
+    def handle_mandalorian_bullet_collisions(self):
+        for bu in self.mandalorian_bullets:
+            for fb in self.fire_beams:
+                if self.check_collision(fb, bu, cheap=True, buffer=True):
+                    self.fire_beams.remove(fb)
+                    self.mandalorian_bullets.remove(bu)
+
     def handle_collisions(self):
-        self.handle_beam_collisions()
         self.handle_coin_collisions()
+        self.handle_mandalorian_bullet_collisions()
+
+        if not self.shield:
+            self.handle_beam_collisions()
+
+    def start_shield(self):
+        if self.shield:
+            return
+
+        if clock() - self.shield_time > conf.SHIELD_SLEEP_TIME:
+            self.shield = True
+            self.player.set_shield(True)
+            self.shield_time = clock()
+            self._screen.flash(Back.CYAN + ' ', self.frame_count)
+
+    def end_shield(self):
+        if not self.shield:
+            return
+
+        if clock() - self.shield_time > conf.SHIELD_UP_TIME:
+            self.shield = False
+            self.player.set_shield(False)
+            self.shield_time = clock()
+            self._screen.flash(Back.CYAN + ' ', self.frame_count)
 
     def remove_old_objs(self):
         for fb in self.fire_beams:
@@ -103,12 +136,19 @@ class Game:
             if co.is_out()[1]:
                 self.coins.remove(co)
 
+        for bu in self.mandalorian_bullets:
+            if bu.is_out()[3]:
+                self.mandalorian_bullets.remove(bu)
+
     def paint_objs(self):
         for fb in self.fire_beams:
             self._screen.add(fb)
 
         for co in self.coins:
             self._screen.add(co)
+
+        for bu in self.mandalorian_bullets:
+            self._screen.add(bu)
 
         self._screen.add(self.player)
 
@@ -119,6 +159,9 @@ class Game:
         for co in self.coins:
             co.move()
 
+        for bu in self.mandalorian_bullets:
+            bu.move()
+
         self.player.move()
 
     def calc_acc_objs(self):
@@ -128,7 +171,15 @@ class Game:
         for co in self.coins:
             co.calc_acc()
 
+        for bu in self.mandalorian_bullets:
+            bu.calc_acc()
+
         self.player.calc_acc()
+
+    def fire(self):
+        pos = self.player.show()[0]
+
+        self.mandalorian_bullets.append(MandalorianBullet(self.height, self.width, int(pos[0]) + 1, int(pos[1]) + 2))
 
     def handle_input(self):
         if self.keyboard.kbhit():
@@ -137,8 +188,11 @@ class Game:
             if inp in self.PLAY_KEYS:
                 self.player.nudge(inp)
                 
-            elif inp in self.CONTROL_KEYS:
-                pass
+            elif inp == 'e':
+                self.fire()
+
+            elif inp == ' ':
+                self.start_shield()
 
             self.keyboard.flush()
 
@@ -198,12 +252,14 @@ class Game:
             self.move_objs()
 
             self.remove_old_objs()
+            self._screen.clear()
             self.paint_objs()
 
             self.handle_collisions()
+
+            self.end_shield()
             
             self._screen.print_board(self.frame_count)
-            self._screen.clear()
             self.frame_count += 1
             while clock() - start_time < 0.1:
                 pass
