@@ -8,7 +8,7 @@ from time import monotonic as clock, sleep
 from screen import Screen
 import config as conf
 from thing import Thing
-from obstacle import FireBeam, MandalorianBullet, Boost
+from obstacle import FireBeam, MandalorianBullet, Boost, Magnet
 from kbhit import KBHit
 from mandalorian import Mandalorian
 from utils import intersect, make_coin_group
@@ -47,6 +47,7 @@ class Game:
         self.mandalorian_bullets = []
         self.boosts = []
         self.boost = None
+        self.magnets = []
         self.player = Mandalorian(self.height, self.width, conf.MANDALORIAN_START_Y)
 
         self.shield = False
@@ -74,8 +75,11 @@ class Game:
 
     def build_boost(self):
         if random.random() < conf.BOOST_PROBAB:
-            x = random.randint(conf.SKY_DEPTH, self.height - conf.GND_HEIGHT - 3)  # TODO: bad practice, fix
-            self.boosts.append(Boost(self.height, self.width, x, self.width))
+            self.boosts.append(Boost(self.height, self.width))
+
+    def build_magnet(self):
+        if random.random() < conf.MAGNET_PROBAB:
+            self.magnets.append(Magnet(self.height, self.width))
 
     def build_world(self):
         if self.frame_count % conf.MIN_BEAM_DIST_X == 0:
@@ -86,6 +90,9 @@ class Game:
 
         if self.boost is None and len(self.boosts) == 0:
             self.build_boost()
+
+        if len(self.magnets) == 0:
+            self.build_magnet()
 
     def handle_beam_collisions(self):
         for fb in self.fire_beams:
@@ -117,6 +124,8 @@ class Game:
                     bo.affect(obj)
                 for obj in self.coins:
                     bo.affect(obj)
+                for obj in self.magnets:
+                    bo.affect(obj)
                 for obj in self.boosts:
                     bo.affect(obj)
                 self.move_objs()
@@ -125,6 +134,13 @@ class Game:
                 self.boosts.remove(bo)
                 self._screen.flash(Back.MAGENTA + ' ', self.frame_count)
     
+    def handle_collisions(self):
+        self.handle_coin_collisions()
+        self.handle_mandalorian_bullet_collisions()
+        self.handle_boost_collisions()
+        if not self.shield:
+            self.handle_beam_collisions()
+
     def end_boost(self):
         if self.boost is None:
             return
@@ -135,6 +151,8 @@ class Game:
                 bo.unaffect(obj)
             for obj in self.coins:
                 bo.unaffect(obj)
+            for obj in self.magnets:
+                bo.unaffect(obj)
             for obj in self.boosts:
                 bo.unaffect(obj)
             self.move_objs()
@@ -142,12 +160,11 @@ class Game:
             self.boost = None
             self._screen.flash(Back.MAGENTA + ' ', self.frame_count)
 
-    def handle_collisions(self):
-        self.handle_coin_collisions()
-        self.handle_mandalorian_bullet_collisions()
-        self.handle_boost_collisions()
-        if not self.shield:
-            self.handle_beam_collisions()
+
+    def pull_magnet(self):
+        if len(self.magnets) != 0:
+            for ma in self.magnets:
+                ma.affect(self.player)
 
     def start_shield(self):
         if self.shield:
@@ -178,6 +195,10 @@ class Game:
             if co.is_out()[1]:
                 self.coins.remove(co)
 
+        for ma in self.magnets:
+            if ma.is_out()[1]:
+                self.magnets.remove(ma)
+
         for bo in self.boosts:
             if bo.is_out()[1]:
                 self.boosts.remove(bo)
@@ -192,6 +213,9 @@ class Game:
 
         for co in self.coins:
             self._screen.add(co)
+
+        for ma in self.magnets:
+            self._screen.add(ma)
 
         for bo in self.boosts:
             self._screen.add(bo)
@@ -208,6 +232,9 @@ class Game:
         for co in self.coins:
             co.move()
 
+        for ma in self.magnets:
+            ma.move()
+
         for bo in self.boosts:
             bo.move()
 
@@ -222,6 +249,9 @@ class Game:
 
         for bo in self.boosts:
             bo.reset_acc()
+
+        for ma in self.magnets:
+            ma.reset_acc()
 
         for co in self.coins:
             co.reset_acc()
@@ -304,6 +334,7 @@ class Game:
             self.build_world()
             self.reset_acc_objs()
             self.handle_input()
+            self.pull_magnet()
             self.move_objs()
             self.remove_old_objs()
             self.handle_collisions()

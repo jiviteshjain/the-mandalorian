@@ -4,6 +4,7 @@ from colorama import init as cinit
 from colorama import Fore, Back, Style
 import random
 from time import monotonic as clock
+import math
 
 import config as conf
 from thing import Thing
@@ -68,9 +69,10 @@ class MandalorianBullet(Thing):
         self.acc[1] += conf.GRAVITY_Y
 
 class Boost(Thing):
-    def __init__(self, game_height, game_width, x, y):
-        if type(x) != int or type(y) != int:
-            raise ValueError
+    def __init__(self, game_height, game_width):
+        # places itself
+        x = random.randint(conf.SKY_DEPTH, game_height - conf.GND_HEIGHT - 3)
+        y = game_width
 
         super().__init__(game_height, game_width, np.array([x, y], dtype='float32'), np.array([3, 5]))
 
@@ -87,3 +89,33 @@ class Boost(Thing):
     def unaffect(self, obj):
         obj.add_acc(np.array([0, conf.BOOST_SPEED], dtype='float32'))
 
+class Magnet(Thing):
+    def __init__(self, game_height, game_width):
+        # places itself
+
+        x = random.randint(conf.SKY_DEPTH, game_height - conf.GND_HEIGHT - 3)
+        y = game_width
+
+        super().__init__(game_height, game_width, np.array([x, y], dtype='float32'), np.array([3, 5]))
+        self.repr = np.array([
+            [' ', ' ', Fore.RED + '~', ' ', ' '],
+            [Fore.RED + '~', ' ', Fore.RED + 'M', ' ', Fore.RED + '~'],
+            [' ', ' ', Fore.RED + '~', ' ', ' '],
+        ])
+
+    def affect(self, obj):
+        pos = obj.show()[0]
+        x_cap = abs(self.pos[0] - pos[0])
+        y_cap = abs(self.pos[1] - pos[1])
+
+        theta = math.atan2(x_cap, y_cap)
+        x_force = abs(conf.MAGNET_FORCE * math.sin(theta))
+        y_force = abs(conf.MAGNET_FORCE * math.cos(theta))
+
+        if self.pos[0] < pos[0]:
+            x_force = -x_force
+            
+        if self.pos[1] < pos[1]:
+            y_force = -y_force
+
+        obj.add_acc(np.array([x_force, y_force], dtype='float32'))
