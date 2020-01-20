@@ -61,10 +61,29 @@ class MandalorianBullet(Thing):
         self.repr = np.array([[Back.WHITE + ' ', Back.WHITE + ' ', Style.BRIGHT + Fore.WHITE + 'D']], dtype='object')
         self.vel = np.array([0, conf.MANDALORIAN_BULLET_SPEED], dtype='float32')
 
-    def calc_acc(self):
-        super().calc_acc()
+    def reset_acc(self):
+        super().reset_acc()
 
         self.acc[0] += conf.GRAVITY_X * 0.1
         self.acc[1] += conf.GRAVITY_Y
 
+class Boost(Thing):
+    def __init__(self, game_height, game_width, x, y):
+        if type(x) != int or type(y) != int:
+            raise ValueError
+
+        super().__init__(game_height, game_width, np.array([x, y], dtype='float32'), np.array([3, 5]))
+
+        self.repr = np.array([
+            [Style.BRIGHT + ' ', Style.BRIGHT + ' ', Style.BRIGHT + Fore.MAGENTA + '~', Style.BRIGHT + ' ', Style.BRIGHT + ' '],
+            [Style.BRIGHT + Fore.MAGENTA + '~', Style.BRIGHT + ' ', Style.BRIGHT + Fore.MAGENTA + 'B', Style.BRIGHT + ' ', Style.BRIGHT + Fore.MAGENTA + '~'],
+            [Style.BRIGHT + ' ', Style.BRIGHT + ' ', Style.BRIGHT +
+                Fore.MAGENTA + '~', Style.BRIGHT + ' ', Style.BRIGHT + ' ']
+        ])
+
+    def affect(self, obj):
+        obj.add_acc(np.array([0, -conf.BOOST_SPEED], dtype='float32'))
+
+    def unaffect(self, obj):
+        obj.add_acc(np.array([0, conf.BOOST_SPEED], dtype='float32'))
 

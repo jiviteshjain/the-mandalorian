@@ -55,8 +55,8 @@ class Mandalorian(Thing):
         elif key == 'd':
             self.acc[1] += conf.KEY_FORCE
 
-    def calc_acc(self):
-        super().calc_acc()
+    def reset_acc(self):
+        super().reset_acc()
 
         self.acc[0] += conf.GRAVITY_X
         self.acc[1] += conf.GRAVITY_Y

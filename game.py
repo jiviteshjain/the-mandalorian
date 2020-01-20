@@ -8,7 +8,7 @@ from time import monotonic as clock, sleep
 from screen import Screen
 import config as conf
 from thing import Thing
-from obstacle import FireBeam, MandalorianBullet
+from obstacle import FireBeam, MandalorianBullet, Boost
 from kbhit import KBHit
 from mandalorian import Mandalorian
 from utils import intersect, make_coin_group
@@ -45,6 +45,8 @@ class Game:
         self.fire_beams = []
         self.coins = []
         self.mandalorian_bullets = []
+        self.boosts = []
+        self.boost = None
         self.player = Mandalorian(self.height, self.width, conf.MANDALORIAN_START_Y)
 
         self.shield = False
@@ -70,12 +72,20 @@ class Game:
 
         self.coins.extend(make_coin_group(self.height, self.width, x, self.width, h, w))
 
+    def build_boost(self):
+        if random.random() < conf.BOOST_PROBAB:
+            x = random.randint(conf.SKY_DEPTH, self.height - conf.GND_HEIGHT - 3)  # TODO: bad practice, fix
+            self.boosts.append(Boost(self.height, self.width, x, self.width))
+
     def build_world(self):
         if self.frame_count % conf.MIN_BEAM_DIST_X == 0:
             self.build_firebeam()
 
-        if random.random() < 0.02:
+        if random.random() < conf.COIN_PROBAB:
             self.build_coins()
+
+        if self.boost is None and len(self.boosts) == 0:
+            self.build_boost()
 
     def handle_beam_collisions(self):
         for fb in self.fire_beams:
@@ -100,10 +110,42 @@ class Game:
                     self.fire_beams.remove(fb)
                     self.mandalorian_bullets.remove(bu)
 
+    def handle_boost_collisions(self):
+        for bo in self.boosts:
+            if self.check_collision(self.player, bo, cheap=True):
+                for obj in self.fire_beams:
+                    bo.affect(obj)
+                for obj in self.coins:
+                    bo.affect(obj)
+                for obj in self.boosts:
+                    bo.affect(obj)
+                self.move_objs()
+                conf.GAME_SPEED += conf.BOOST_SPEED # for drag and for new objects
+                self.boost = [bo, clock()]
+                self.boosts.remove(bo)
+                self._screen.flash(Back.MAGENTA + ' ', self.frame_count)
+    
+    def end_boost(self):
+        if self.boost is None:
+            return
+
+        if clock() - self.boost[1] > conf.BOOST_UP_TIME:
+            bo = self.boost[0]
+            for obj in self.fire_beams:
+                bo.unaffect(obj)
+            for obj in self.coins:
+                bo.unaffect(obj)
+            for obj in self.boosts:
+                bo.unaffect(obj)
+            self.move_objs()
+            conf.GAME_SPEED -= conf.BOOST_SPEED # for drag and for new objects
+            self.boost = None
+            self._screen.flash(Back.MAGENTA + ' ', self.frame_count)
+
     def handle_collisions(self):
         self.handle_coin_collisions()
         self.handle_mandalorian_bullet_collisions()
-
+        self.handle_boost_collisions()
         if not self.shield:
             self.handle_beam_collisions()
 
@@ -136,6 +178,10 @@ class Game:
             if co.is_out()[1]:
                 self.coins.remove(co)
 
+        for bo in self.boosts:
+            if bo.is_out()[1]:
+                self.boosts.remove(bo)
+
         for bu in self.mandalorian_bullets:
             if bu.is_out()[3]:
                 self.mandalorian_bullets.remove(bu)
@@ -146,6 +192,9 @@ class Game:
 
         for co in self.coins:
             self._screen.add(co)
+
+        for bo in self.boosts:
+            self._screen.add(bo)
 
         for bu in self.mandalorian_bullets:
             self._screen.add(bu)
@@ -159,22 +208,28 @@ class Game:
         for co in self.coins:
             co.move()
 
+        for bo in self.boosts:
+            bo.move()
+
         for bu in self.mandalorian_bullets:
             bu.move()
 
         self.player.move()
 
-    def calc_acc_objs(self):
+    def reset_acc_objs(self):
         for fb in self.fire_beams:
-            fb.calc_acc()
+            fb.reset_acc()
+
+        for bo in self.boosts:
+            bo.reset_acc()
 
         for co in self.coins:
-            co.calc_acc()
+            co.reset_acc()
 
         for bu in self.mandalorian_bullets:
-            bu.calc_acc()
+            bu.reset_acc()
 
-        self.player.calc_acc()
+        self.player.reset_acc()
 
     def fire(self):
         pos = self.player.show()[0]
@@ -247,17 +302,17 @@ class Game:
             start_time = clock()
             print(random.randint(0, 4))
             self.build_world()
-            self.calc_acc_objs()
+            self.reset_acc_objs()
             self.handle_input()
             self.move_objs()
-
             self.remove_old_objs()
+            self.handle_collisions()
+            
             self._screen.clear()
             self.paint_objs()
 
-            self.handle_collisions()
-
             self.end_shield()
+            self.end_boost()
             
             self._screen.print_board(self.frame_count)
             self.frame_count += 1
