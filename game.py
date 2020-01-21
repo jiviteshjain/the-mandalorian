@@ -58,7 +58,6 @@ class Game:
         self.boss = None
         self.boss_bullets = []
         
-
     def build_firebeam(self):
         num = random.randint(0, 2)
         if num != 0:
@@ -208,7 +207,6 @@ class Game:
             self.boost = None
             self._screen.flash(Back.MAGENTA + ' ', self.frame_count)
 
-
     def pull_magnet(self):
         if len(self.magnets) != 0:
             for ma in self.magnets:
@@ -284,7 +282,6 @@ class Game:
             self._screen.add(bu)
 
         self._screen.add(self.player)
-
 
     def move_objs(self):
         for fb in self.fire_beams:
@@ -381,7 +378,6 @@ class Game:
         self.mandalorian_bullets.clear()
         self.boosts.clear()
         self.magnets.clear()
-
 
     def check_collision(self, obj_a, obj_b, cheap=False, buffer=False):
         # Buffering only done for second object

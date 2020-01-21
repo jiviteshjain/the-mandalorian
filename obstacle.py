@@ -89,8 +89,6 @@ class BossBullet(Thing):
         vel = utils.vector_decompose(conf.BOSS_BULLET_SPEED, self.pos, target_pos)
         self.vel = np.array(vel, dtype='float32')
 
-
-
 class Boost(Thing):
     def __init__(self, game_height, game_width):
         # places itself

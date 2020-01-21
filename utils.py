@@ -26,7 +26,6 @@ def intersect(rec_a, rec_b):
     else:
         return True, [x_start, x_end, y_start, y_end]
 
-
 def get_art(path):
     path = os.path.join(conf.ART_BASE_PATH, path)
     arr = []

@@ -162,7 +162,23 @@ class Screen:
         print(Style.RESET_ALL)
         
 
+class Bar:
+    def __init__(self, width):
+        self.height = conf.BAR_HEIGHT
+        self.width = width
+        self.color = conf.BAR_DEFAULT_COLOR
 
+    def print_bar(self):
+        for i in range(self.height):
+            for j in range(self.width):
+                print(self.color + ' ', end='')
+            print('')
+
+    def set_color(self, color):
+        self.color = color
+
+    def percentage(self, amt, fore_color, back_color):
+        pass
         
 
 
