@@ -102,8 +102,7 @@ class Boss(Thing):
 
     def take_hit(self):
         self.strength -= 1
-        if self.strength <= 0:
-            raise SystemExit
+        return self.strength <= 0
 
     def shoot(self, obj):
         return BossBullet(self.game_h, self.game_w, int(self.pos[0] + 7), int(self.pos[1] + 8), obj)

@@ -6,11 +6,12 @@ import random
 import time
 
 import config as conf
+import utils
 
 class Screen:
 
     CURSOR_0 = "\033[0;0H"
-    # CLOUD_REPR = None
+    CLEAR = "\033[2J"
 
     def __init__(self, height, width):
         self._height = height
@@ -44,6 +45,8 @@ class Screen:
         
 
         self._fore_board = np.array([[' ' for j in range(self._width)] for i in range(self._height)], dtype='object')
+
+        # self.bottom_bar = np.array([[conf.BOTTOM_BAR_COLOR + ' ' for j in range(self._width)] for i in range(conf.BOTTOM_BAR_HEIGHT)])
 
     def clear(self):
         # for i in range(self._height):
@@ -121,3 +124,45 @@ class Screen:
             time.sleep(0.1)
             self.print_board(frame_count)
             time.sleep(0.2)
+
+    def game_over(self, won, game_score, game_time):
+        print(Style.RESET_ALL + self.CLEAR + self.CURSOR_0 + '\n\n\n')
+        
+        if won:
+            yoda = utils.get_art('yoda.txt')
+            if yoda is not None:
+                print(Fore.YELLOW, end='')
+                for i in range(yoda.shape[0]):
+                    for j in range(yoda.shape[1]):
+                        print(yoda[i][j], end='')
+                    print('')
+                time.sleep(2)
+                print(Style.RESET_ALL + self.CLEAR + self.CURSOR_0 + '\n\n\n')
+        
+        go_text = utils.get_art('game-over.txt')
+        if go_text is not None:
+            print(Fore.GREEN, end='')
+            for i in range(go_text.shape[0]):
+                for j in range(go_text.shape[1]):
+                    print(go_text[i][j], end='')
+                print('')
+        
+        print('\n\n', end='')
+
+        if won:
+            print(Style.BRIGHT + Fore.YELLOW + 'YOU WON :)')
+        else:
+            print(Style.BRIGHT + Fore.RED + 'YOU LOST :(')
+
+        print(Fore.WHITE, end='')
+        print('Score:', game_score)
+        print('Time:', game_time)
+
+        print(Style.DIM + '\nPress F to exit')
+        print(Style.RESET_ALL)
+        
+
+
+        
+
+

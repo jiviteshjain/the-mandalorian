@@ -42,6 +42,7 @@ class Game:
         self.lives = conf.MAX_LIVES
         self.score = 0
         self.init_time = clock()
+        self.money = 0
 
         self.fire_beams = []
         self.coins = []
@@ -110,7 +111,7 @@ class Game:
             if self.check_collision(self.player, fb):
                 self.lives -= 1
                 if self.lives == 0:
-                    self.game_over()
+                    self.game_over(won=False)
                 else:
                     self._screen.flash(Back.RED + ' ', self.frame_count)
                     self.fire_beams.remove(fb)
@@ -118,23 +119,28 @@ class Game:
     def handle_coin_collisions(self):
         for co in self.coins:
             if self.check_collision(self.player, co, cheap=True, buffer=True):
-                self.score += 1
+                self.money += 1
+                self.score += conf.SCORE_COIN_FACTOR
                 self.coins.remove(co)
 
     def handle_mandalorian_bullet_collisions(self):
         for bu in self.mandalorian_bullets:
             for fb in self.fire_beams:
                 if self.check_collision(fb, bu, cheap=True, buffer=True):
+                    self.score += conf.SCORE_BEAM_FACTOR
                     self.fire_beams.remove(fb)
                     self.mandalorian_bullets.remove(bu)
 
             if self.boss is not None:
                 if self.check_collision(self.boss, bu, cheap=False, buffer=False):
-                    self.boss.take_hit()
+                    self.score += conf.SCORE_BOSS_HIT_FACTOR
                     self.mandalorian_bullets.remove(bu)
+                    if self.boss.take_hit():
+                        raise self.game_over(won=True)
 
                 for fi in self.boss_bullets:
                     if self.check_collision(fi, bu, cheap=True, buffer=True):
+                        self.score += conf.SCORE_BOSS_BULLET_FACTOR
                         self.boss_bullets.remove(fi)
                         self.mandalorian_bullets.remove(bu)
 
@@ -154,11 +160,12 @@ class Game:
                 self.boost = [bo, clock()]
                 self.boosts.remove(bo)
                 self._screen.flash(Back.MAGENTA + ' ', self.frame_count)
+                self.score += conf.SCORE_BOOST_FACTOR
     
     def handle_boss_collisions(self):
 
         if self.check_collision(self.player, self.boss, cheap=False, buffer=False):
-            raise SystemExit
+            self.game_over(won=False)
 
     def handle_boss_bullet_collisions(self):
         for bu in self.boss_bullets:
@@ -166,7 +173,7 @@ class Game:
                 self.boss_bullets.remove(bu)
                 self.lives -= 1
                 if self.lives <= 0:
-                    self.game_over()
+                    self.game_over(won=False)
                 else:
                     pass
 
@@ -348,11 +355,15 @@ class Game:
 
             self.keyboard.flush()
 
-    def game_over(self):
+    def game_over(self, won=False):
+        sleep(1)
+        self._screen.game_over(won, self.score, int(clock() - self.init_time))
+        while (True):
+            if self.keyboard.kbhit():
+                if self.keyboard.getch() == 'f':
+                    break
         self.keyboard.set_normal_term()
-        print(Style.RESET_ALL)
         raise SystemExit
-        pass
     
     def setup_boss(self):
         if self.boss is not None:
@@ -412,11 +423,30 @@ class Game:
 
         return False
 
+    def print_info(self):
+        print(Style.RESET_ALL + Style.BRIGHT, end='')
+        print('LIVES:', str(self.lives).rjust(1), end='\t')
+        print('COINS:', str(self.money).rjust(3), end='\t')
+        print('SCORE:', str(self.score).rjust(5), end='\t')
+        time = int(clock() - self.init_time)
+        print('TIME:', str(time).rjust(5), end='\t')
+        
+        if self.shield:
+            time_left = int(conf.SHIELD_UP_TIME - (clock()- self.shield_time))
+            print('SHIELD ACTIVE:', str(time_left).rjust(2), end='')
+        else:
+            time_left = int(conf.SHIELD_SLEEP_TIME - (clock() - self.shield_time))
+            if time_left <= 0:
+                print('SHIELD AVAIL', end='')
+            else:
+                print('SHIELD IN:', str(time_left).rjust(2), end='')
+        print('            ', end='')
+
     def play(self):
         while True:
             self.setup_boss()
             start_time = clock()
-            print(random.randint(0, 4))
+            # print(random.randint(0, 4))
             
             self.build_world()
             self.reset_acc_objs()
@@ -433,7 +463,9 @@ class Game:
             self.end_boost()
             
             self._screen.print_board(self.frame_count)
+            self.print_info()
             self.frame_count += 1
+            self.score += conf.SCORE_TIME_FACTOR
             while clock() - start_time < 0.1:
                 pass
             
