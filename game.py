@@ -11,7 +11,7 @@ from thing import Thing
 from obstacle import FireBeam, MandalorianBullet, Boost, Magnet
 from kbhit import KBHit
 from mandalorian import Mandalorian
-from utils import intersect, make_coin_group
+import utils
 from boss import Boss
 
 #    |
@@ -55,6 +55,7 @@ class Game:
         self.shield_time = clock()
 
         self.boss = None
+        self.boss_bullets = []
         
 
     def build_firebeam(self):
@@ -74,7 +75,7 @@ class Game:
 
         x = random.randint(conf.SKY_DEPTH, self.height - conf.GND_HEIGHT - h)
 
-        self.coins.extend(make_coin_group(self.height, self.width, x, self.width, h, w))
+        self.coins.extend(utils.make_coin_group(self.height, self.width, x, self.width, h, w))
 
     def build_boost(self):
         if random.random() < conf.BOOST_PROBAB:
@@ -83,6 +84,9 @@ class Game:
     def build_magnet(self):
         if random.random() < conf.MAGNET_PROBAB:
             self.magnets.append(Magnet(self.height, self.width))
+
+    def build_boss_bullet(self):
+        self.boss_bullets.append(self.boss.shoot(self.player))
 
     def build_world(self):
         if self.boss is None:
@@ -97,6 +101,9 @@ class Game:
 
             if len(self.magnets) == 0:
                 self.build_magnet()
+        else:
+            if random.random() < conf.BOSS_SHOOT_PROBAB:
+                self.build_boss_bullet()
 
     def handle_beam_collisions(self):
         for fb in self.fire_beams:
@@ -121,6 +128,16 @@ class Game:
                     self.fire_beams.remove(fb)
                     self.mandalorian_bullets.remove(bu)
 
+            if self.boss is not None:
+                if self.check_collision(self.boss, bu, cheap=False, buffer=False):
+                    self.boss.take_hit()
+                    self.mandalorian_bullets.remove(bu)
+
+                for fi in self.boss_bullets:
+                    if self.check_collision(fi, bu, cheap=True, buffer=True):
+                        self.boss_bullets.remove(fi)
+                        self.mandalorian_bullets.remove(bu)
+
     def handle_boost_collisions(self):
         for bo in self.boosts:
             if self.check_collision(self.player, bo, cheap=True):
@@ -138,12 +155,32 @@ class Game:
                 self.boosts.remove(bo)
                 self._screen.flash(Back.MAGENTA + ' ', self.frame_count)
     
+    def handle_boss_collisions(self):
+
+        if self.check_collision(self.player, self.boss, cheap=False, buffer=False):
+            raise SystemExit
+
+    def handle_boss_bullet_collisions(self):
+        for bu in self.boss_bullets:
+            if self.check_collision(self.player, bu, cheap=True, buffer=True):
+                self.boss_bullets.remove(bu)
+                self.lives -= 1
+                if self.lives <= 0:
+                    self.game_over()
+                else:
+                    pass
+
     def handle_collisions(self):
         self.handle_coin_collisions()
         self.handle_mandalorian_bullet_collisions()
         self.handle_boost_collisions()
         if not self.shield:
             self.handle_beam_collisions()
+        
+        if self.boss is not None:
+            self.handle_boss_collisions()
+            if not self.shield:
+                self.handle_boss_bullet_collisions()
 
     def end_boost(self):
         if self.boost is None:
@@ -211,6 +248,11 @@ class Game:
             if bu.is_out()[3]:
                 self.mandalorian_bullets.remove(bu)
 
+        if self.boss is not None:
+            for bu in self.boss_bullets:
+                if bu.is_out()[3]:
+                    self.boss_bullets.remove(bu)
+
     def paint_objs(self):
         for fb in self.fire_beams:
             self._screen.add(fb)
@@ -223,14 +265,19 @@ class Game:
 
         for bo in self.boosts:
             self._screen.add(bo)
+        
+        if self.boss is not None:
+            self._screen.add(self.boss)
+
+            for bu in self.boss_bullets:
+                self._screen.add(bu)
+
 
         for bu in self.mandalorian_bullets:
             self._screen.add(bu)
 
         self._screen.add(self.player)
 
-        if self.boss is not None:
-            self._screen.add(self.boss)
 
     def move_objs(self):
         for fb in self.fire_beams:
@@ -253,6 +300,9 @@ class Game:
         if self.boss is not None:
             self.boss.follow(self.player)
             self.boss.move()
+            
+            for bu in self.boss_bullets:
+                bu.move()
 
     def reset_acc_objs(self):
         for fb in self.fire_beams:
@@ -274,6 +324,9 @@ class Game:
 
         if self.boss is not None:
             self.boss.reset_acc()
+
+            for bu in self.boss_bullets:
+                bu.reset_acc()
 
     def fire(self):
         pos = self.player.show()[0]
@@ -335,7 +388,7 @@ class Game:
         else:
             b_rec = [b_pos[0], b_pos[0] + b_size[0] - 1, b_pos[1], b_pos[1] + b_size[1] - 1]
 
-        bump, common = intersect(a_rec, b_rec)
+        bump, common = utils.intersect(a_rec, b_rec)
         
         if cheap or buffer:
             return bump
@@ -364,6 +417,7 @@ class Game:
             self.setup_boss()
             start_time = clock()
             print(random.randint(0, 4))
+            
             self.build_world()
             self.reset_acc_objs()
             self.handle_input()

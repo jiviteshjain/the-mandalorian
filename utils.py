@@ -5,9 +5,10 @@ from colorama import Fore, Back, Style
 import random
 from time import monotonic as clock
 import random
+import math
 
 import config as conf
-from obstacle import Coin
+import obstacle
 
 def intersect(rec_a, rec_b):
     if type(rec_a) != list or type(rec_b) != list or len(rec_a) != 4 or len(rec_b) != 4:
@@ -48,9 +49,28 @@ def make_coin_group(game_height, game_width, x=0, y=0, h=1, w=1):
                 if random.random() < 0.65:
                     drawing = True
             if drawing:
-                coins.append(Coin(game_height, game_width, x + i, y + j))
+                coins.append(obstacle.Coin(game_height, game_width, x + i, y + j))
                 if random.random() < 0.3:
                     drawing = False
                     break
     
     return coins
+
+def vector_decompose(mag, start, end):
+    if type(start) != np.ndarray or type(end) != np.ndarray:
+        raise ValueError
+
+    x_cap = abs(start[0] - end[0])
+    y_cap = abs(start[1] - end[1])
+
+    theta = math.atan2(x_cap, y_cap)
+    x_force = abs(mag * math.sin(theta))
+    y_force = abs(mag * math.cos(theta))
+
+    if end[0] < start[0]:
+        x_force = -x_force
+
+    if end[1] < start[1]:
+        y_force = -y_force
+
+    return [x_force, y_force]

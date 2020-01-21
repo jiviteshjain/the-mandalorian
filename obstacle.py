@@ -7,6 +7,7 @@ from time import monotonic as clock
 import math
 
 import config as conf
+import utils
 from thing import Thing
 
 class FireBeam(Thing):
@@ -68,6 +69,28 @@ class MandalorianBullet(Thing):
         self.acc[0] += conf.GRAVITY_X * 0.1
         self.acc[1] += conf.GRAVITY_Y
 
+class BossBullet(Thing):
+
+    def __init__(self, game_height, game_width, x, y, target):
+        if type(x) != int or type(y) != int:
+            raise ValueError
+
+        super().__init__(game_height, game_width, np.array([x, y], dtype='float32'), np.array([3, 5]))
+
+        self.repr = np.array([
+            [' ', Style.BRIGHT + Fore.YELLOW + '.', Style.BRIGHT + Fore.YELLOW + ':', Style.BRIGHT + Fore.YELLOW + '.', ' '],
+            [Style.BRIGHT + Fore.YELLOW + '{',
+                ' ', Style.BRIGHT + Fore.YELLOW + '@', ' ', Style.BRIGHT + Fore.YELLOW + '}'],
+            [' ', Style.BRIGHT + Fore.YELLOW + "'", Style.BRIGHT +
+                Fore.YELLOW + ':', Style.BRIGHT + Fore.YELLOW + "'", ' '],
+        ], dtype='object')
+
+        target_pos = target.show()[0]
+        vel = utils.vector_decompose(conf.BOSS_BULLET_SPEED, self.pos, target_pos)
+        self.vel = np.array(vel, dtype='float32')
+
+
+
 class Boost(Thing):
     def __init__(self, game_height, game_width):
         # places itself
@@ -105,17 +128,18 @@ class Magnet(Thing):
 
     def affect(self, obj):
         pos = obj.show()[0]
-        x_cap = abs(self.pos[0] - pos[0])
-        y_cap = abs(self.pos[1] - pos[1])
+        force = utils.vector_decompose(conf.MAGNET_FORCE, pos, self.pos)
+        # x_cap = abs(self.pos[0] - pos[0])
+        # y_cap = abs(self.pos[1] - pos[1])
 
-        theta = math.atan2(x_cap, y_cap)
-        x_force = abs(conf.MAGNET_FORCE * math.sin(theta))
-        y_force = abs(conf.MAGNET_FORCE * math.cos(theta))
+        # theta = math.atan2(x_cap, y_cap)
+        # x_force = abs(conf.MAGNET_FORCE * math.sin(theta))
+        # y_force = abs(conf.MAGNET_FORCE * math.cos(theta))
 
-        if self.pos[0] < pos[0]:
-            x_force = -x_force
+        # if self.pos[0] < pos[0]:
+        #     x_force = -x_force
             
-        if self.pos[1] < pos[1]:
-            y_force = -y_force
+        # if self.pos[1] < pos[1]:
+        #     y_force = -y_force
 
-        obj.add_acc(np.array([x_force, y_force], dtype='float32'))
+        obj.add_acc(np.array(force, dtype='float32'))

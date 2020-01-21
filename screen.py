@@ -6,7 +6,6 @@ import random
 import time
 
 import config as conf
-from utils import get_art
 
 class Screen:
 
