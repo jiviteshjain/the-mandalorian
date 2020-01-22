@@ -138,16 +138,19 @@ class Game:
 
     def handle_mandalorian_bullet_collisions(self):
         for bu in self.mandalorian_bullets:
+            hit = False
             for fb in self.fire_beams:
                 if self.check_collision(fb, bu, cheap=True, buffer=True):
                     self.score += conf.SCORE_BEAM_FACTOR
                     self.fire_beams.remove(fb)
-                    self.mandalorian_bullets.remove(bu)
+                    hit = True
+                    # self.mandalorian_bullets.remove(bu)
 
             if self.boss is not None:
                 if self.check_collision(self.boss, bu, cheap=False, buffer=False):
                     self.score += conf.SCORE_BOSS_HIT_FACTOR
-                    self.mandalorian_bullets.remove(bu)
+                    # self.mandalorian_bullets.remove(bu)
+                    hit = True
                     if self.boss.take_hit():
                         raise self.game_over(won=True)
 
@@ -155,7 +158,11 @@ class Game:
                     if self.check_collision(fi, bu, cheap=True, buffer=True):
                         self.score += conf.SCORE_BOSS_BULLET_FACTOR
                         self.boss_bullets.remove(fi)
-                        self.mandalorian_bullets.remove(bu)
+                        # self.mandalorian_bullets.remove(bu)
+                        hit = True
+
+            if hit:
+                self.mandalorian_bullets.remove(bu)
 
     def handle_boost_collisions(self):
 
@@ -210,7 +217,7 @@ class Game:
         if self.boost is None:
             return
 
-        if not forceful and clock() - self.boost[1] > conf.BOOST_UP_TIME:
+        if forceful or clock() - self.boost[1] > conf.BOOST_UP_TIME:
             bo = self.boost[0]
             for obj in self.fire_beams:
                 bo.unaffect(obj)
