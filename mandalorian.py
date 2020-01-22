@@ -13,15 +13,15 @@ class Mandalorian(Thing):
     def __init__(self, game_height, game_width, y=0):
 
         super().__init__(game_height, game_width, np.array([game_height - conf.GND_HEIGHT - 4, y]), np.array([4, 3]))
-        self.acc = np.array([conf.GRAVITY_X, conf.GRAVITY_Y])
-        self.repr = np.array([
+        self._acc = np.array([conf.GRAVITY_X, conf.GRAVITY_Y])
+        self._repr = np.array([
             [' ', Fore.CYAN + Style.BRIGHT + '_', ' '],
             [Fore.CYAN + Style.BRIGHT + '|', Fore.GREEN +
                 Style.BRIGHT + 'O', Fore.CYAN + Style.BRIGHT + '`'],
             [Fore.CYAN + Style.BRIGHT + '[', Style.BRIGHT + Back.GREEN + ' ', Fore.CYAN + Style.BRIGHT + ']'],
             [' ', Fore.CYAN + Style.BRIGHT + 'J', Fore.CYAN + Style.BRIGHT + 'L']
         ], dtype='object')
-        self.repr_shield = np.array([
+        self._repr_shield = np.array([
             [' ', Fore.CYAN + Style.BRIGHT + '_', ' '],
             [Fore.CYAN + Style.BRIGHT + '|', Fore.GREEN +
                 Style.BRIGHT + 'O', Fore.CYAN + Style.BRIGHT + '`'],
@@ -29,44 +29,44 @@ class Mandalorian(Thing):
                 Back.BLACK + ' ', Fore.CYAN + Style.BRIGHT + ']'],
             [' ', Fore.CYAN + Style.BRIGHT + 'J', Fore.CYAN + Style.BRIGHT + 'L']
         ], dtype='object')
-        self.shield = False
+        self._shield = False
 
     def is_out(self):
         # T, L, B, R
         # Checks if entire mandalorian is on screen
-        return (self.pos[0] < 0), (self.pos[1] < 0), (self.pos[0] + self.size[0] - 1 >= self.game_h), (self.pos[1] + self.size[1] - 1 >= self.game_w)
+        return (self._pos[0] < 0), (self._pos[1] < 0), (self._pos[0] + self._size[0] - 1 >= self._game_h), (self._pos[1] + self._size[1] - 1 >= self._game_w)
 
     def show(self):
-        if not self.shield:
-            return np.round(self.pos).astype(np.int32), self.size, self.repr
+        if not self._shield:
+            return np.round(self._pos).astype(np.int32), self._size, self._repr
         else:
-            return np.round(self.pos).astype(np.int32), self.size, self.repr_shield
+            return np.round(self._pos).astype(np.int32), self._size, self._repr_shield
 
     def set_shield(self, what):
         if type(what) != bool:
             raise ValueError
-        self.shield = what
+        self._shield = what
 
     def nudge(self, key):
         if key == 'w':
-            self.acc[0] -= conf.KEY_FORCE
+            self._acc[0] -= conf.KEY_FORCE
         elif key == 'a':
-            self.acc[1] -= conf.KEY_FORCE
+            self._acc[1] -= conf.KEY_FORCE
         elif key == 'd':
-            self.acc[1] += conf.KEY_FORCE
+            self._acc[1] += conf.KEY_FORCE
 
     def reset_acc(self):
         super().reset_acc()
 
-        self.acc[0] += conf.GRAVITY_X
-        self.acc[1] += conf.GRAVITY_Y
+        self._acc[0] += conf.GRAVITY_X
+        self._acc[1] += conf.GRAVITY_Y
 
-        if (self.vel[1] + conf.GAME_SPEED) > 0:
-            drag = -conf.DRAG_COEFF * ((self.vel[1] + conf.GAME_SPEED)** 2)
+        if (self._vel[1] + conf.GAME_SPEED) > 0:
+            drag = -conf.DRAG_COEFF * ((self._vel[1] + conf.GAME_SPEED)** 2)
         else:
-            drag = conf.DRAG_COEFF * ((self.vel[1] + conf.GAME_SPEED)** 2)
+            drag = conf.DRAG_COEFF * ((self._vel[1] + conf.GAME_SPEED)** 2)
             
-        self.acc[1] += drag
+        self._acc[1] += drag
 
     def move(self):
         super().move()
@@ -74,15 +74,15 @@ class Mandalorian(Thing):
         t, l, b, r = self.is_out()
 
         if l:
-            if self.vel[1] < 0:
-                self.pos[1] = 0
-                self.vel[1] = 0
-            if self.acc[1] < 0:
-                self.acc[1] = 0
+            if self._vel[1] < 0:
+                self._pos[1] = 0
+                self._vel[1] = 0
+            if self._acc[1] < 0:
+                self._acc[1] = 0
 
         if r:
-            if self.vel[1] > 0:
-                self.pos[1] = self.game_w - self.size[1]
-                self.vel[1] = 0
-            if self.acc[1] > 0:
-                self.acc[1] = 0
+            if self._vel[1] > 0:
+                self._pos[1] = self._game_w - self._size[1]
+                self._vel[1] = 0
+            if self._acc[1] > 0:
+                self._acc[1] = 0

@@ -20,11 +20,11 @@ class Boss(Thing):
 
         super().__init__(game_height, game_width, np.array([x, y], dtype='float32'), np.array([h, w]))
 
-        self.vel = np.array([0, 0], dtype='float32')
+        self._vel = np.array([0, 0], dtype='float32')
 
-        self.strength = conf.BOSS_MAX_STRENGTH
+        self._strength = conf.BOSS_MAX_STRENGTH
 
-        self.repr = np.array([[' ', Style.BRIGHT + Fore.RED + '<', Style.BRIGHT + Fore.RED + '>', Style.BRIGHT + Fore.RED + '=', Style.BRIGHT + Fore.RED + '=', Style.BRIGHT + Fore.RED + '=', Style.BRIGHT + Fore.RED + '=', Style.BRIGHT + Fore.RED + '=', Style.BRIGHT + Fore.RED + '=', Style.BRIGHT + Fore.RED + '=', Style.BRIGHT + Fore.RED + '(',
+        self._repr = np.array([[' ', Style.BRIGHT + Fore.RED + '<', Style.BRIGHT + Fore.RED + '>', Style.BRIGHT + Fore.RED + '=', Style.BRIGHT + Fore.RED + '=', Style.BRIGHT + Fore.RED + '=', Style.BRIGHT + Fore.RED + '=', Style.BRIGHT + Fore.RED + '=', Style.BRIGHT + Fore.RED + '=', Style.BRIGHT + Fore.RED + '=', Style.BRIGHT + Fore.RED + '(',
         Style.BRIGHT + Fore.RED + ')', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
         ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
         ' ', ' ', ' ', ' ', ' ', ' '],
@@ -91,21 +91,21 @@ class Boss(Thing):
         obj_top = pos[0]
         obj_bottom = pos[0] + size[0]
 
-        self_top = self.pos[0]
-        self_bottom = self.pos[0] + self.size[0]
+        self_top = self._pos[0]
+        self_bottom = self._pos[0] + self._size[0]
 
         if obj_top < self_top:
-            self.pos[0] = obj_top
+            self._pos[0] = obj_top
 
         if obj_bottom > self_bottom:
-            self.pos[0] = obj_bottom - self.size[0]
+            self._pos[0] = obj_bottom - self._size[0]
 
     def take_hit(self):
-        self.strength -= 1
-        return self.strength <= 0
+        self._strength -= 1
+        return self._strength <= 0
 
     def shoot(self, obj):
-        return BossBullet(self.game_h, self.game_w, int(self.pos[0] + 7), int(self.pos[1] + 8), obj)
+        return BossBullet(self._game_h, self._game_w, int(self._pos[0] + 7), int(self._pos[1] + 8), obj)
 
     def get_strength(self):
-        return self.strength
+        return self._strength

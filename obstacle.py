@@ -32,15 +32,15 @@ class FireBeam(Thing):
         super().__init__(game_height, game_width, np.array([x, y]), size_arr)
 
         if direction == self.DIR_HOR or direction == self.DIR_VERT:
-            for i in range(self.size[0]):
-                for j in range(self.size[1]):
-                    self.repr[i][j] = Back.YELLOW + Style.BRIGHT + Fore.RED + '#'
+            for i in range(self._size[0]):
+                for j in range(self._size[1]):
+                    self._repr[i][j] = Back.YELLOW + Style.BRIGHT + Fore.RED + '#'
         elif direction == self.DIR_DIA_DOWN:
             for i in range(size):
-                self.repr[i][i] = Back.YELLOW + Style.BRIGHT + Fore.RED + '#' 
+                self._repr[i][i] = Back.YELLOW + Style.BRIGHT + Fore.RED + '#' 
         else:
             for i in range(size):
-                self.repr[i][size - 1 - i] = Back.YELLOW + Style.BRIGHT + Fore.RED + '#'
+                self._repr[i][size - 1 - i] = Back.YELLOW + Style.BRIGHT + Fore.RED + '#'
 
 class Coin(Thing):
 
@@ -50,7 +50,7 @@ class Coin(Thing):
 
         super().__init__(game_height, game_width, np.array([x, y], dtype='float32'), np.array([1, 1]))
 
-        self.repr = np.array([[Fore.YELLOW + Style.BRIGHT + '$']], dtype='object')
+        self._repr = np.array([[Fore.YELLOW + Style.BRIGHT + '$']], dtype='object')
 
 class MandalorianBullet(Thing):
     
@@ -60,14 +60,14 @@ class MandalorianBullet(Thing):
 
         super().__init__(game_height, game_width, np.array([x, y], dtype='float32'), np.array([1, 3]))
 
-        self.repr = np.array([[Back.WHITE + ' ', Back.WHITE + ' ', Style.BRIGHT + Fore.WHITE + 'D']], dtype='object')
-        self.vel = np.array([0, conf.MANDALORIAN_BULLET_SPEED], dtype='float32')
+        self._repr = np.array([[Back.WHITE + ' ', Back.WHITE + ' ', Style.BRIGHT + Fore.WHITE + 'D']], dtype='object')
+        self._vel = np.array([0, conf.MANDALORIAN_BULLET_SPEED], dtype='float32')
 
     def reset_acc(self):
         super().reset_acc()
 
-        self.acc[0] += conf.GRAVITY_X * 0.1
-        self.acc[1] += conf.GRAVITY_Y
+        self._acc[0] += conf.GRAVITY_X * 0.1
+        self._acc[1] += conf.GRAVITY_Y
 
 class BossBullet(Thing):
 
@@ -77,7 +77,7 @@ class BossBullet(Thing):
 
         super().__init__(game_height, game_width, np.array([x, y], dtype='float32'), np.array([3, 5]))
 
-        self.repr = np.array([
+        self._repr = np.array([
             [' ', Style.BRIGHT + Fore.YELLOW + '.', Style.BRIGHT + Fore.YELLOW + ':', Style.BRIGHT + Fore.YELLOW + '.', ' '],
             [Style.BRIGHT + Fore.YELLOW + '{',
                 ' ', Style.BRIGHT + Fore.YELLOW + '@', ' ', Style.BRIGHT + Fore.YELLOW + '}'],
@@ -86,8 +86,8 @@ class BossBullet(Thing):
         ], dtype='object')
 
         target_pos = target.show()[0]
-        vel = utils.vector_decompose(conf.BOSS_BULLET_SPEED, self.pos, target_pos)
-        self.vel = np.array(vel, dtype='float32')
+        vel = utils.vector_decompose(conf.BOSS_BULLET_SPEED, self._pos, target_pos)
+        self._vel = np.array(vel, dtype='float32')
 
 class Boost(Thing):
     def __init__(self, game_height, game_width):
@@ -97,7 +97,7 @@ class Boost(Thing):
 
         super().__init__(game_height, game_width, np.array([x, y], dtype='float32'), np.array([3, 5]))
 
-        self.repr = np.array([
+        self._repr = np.array([
             [Style.BRIGHT + ' ', Style.BRIGHT + ' ', Style.BRIGHT + Fore.MAGENTA + '~', Style.BRIGHT + ' ', Style.BRIGHT + ' '],
             [Style.BRIGHT + Fore.MAGENTA + '~', Style.BRIGHT + ' ', Style.BRIGHT + Fore.MAGENTA + 'B', Style.BRIGHT + ' ', Style.BRIGHT + Fore.MAGENTA + '~'],
             [Style.BRIGHT + ' ', Style.BRIGHT + ' ', Style.BRIGHT +
@@ -118,7 +118,7 @@ class Magnet(Thing):
         y = game_width
 
         super().__init__(game_height, game_width, np.array([x, y], dtype='float32'), np.array([3, 5]))
-        self.repr = np.array([
+        self._repr = np.array([
             [' ', ' ', Fore.RED + '~', ' ', ' '],
             [Fore.RED + '~', ' ', Fore.RED + 'M', ' ', Fore.RED + '~'],
             [' ', ' ', Fore.RED + '~', ' ', ' '],
@@ -126,7 +126,7 @@ class Magnet(Thing):
 
     def affect(self, obj):
         pos = obj.show()[0]
-        force = utils.vector_decompose(conf.MAGNET_FORCE, pos, self.pos)
+        force = utils.vector_decompose(conf.MAGNET_FORCE, pos, self._pos)
         # x_cap = abs(self.pos[0] - pos[0])
         # y_cap = abs(self.pos[1] - pos[1])
 
