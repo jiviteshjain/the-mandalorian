@@ -106,3 +106,6 @@ class Boss(Thing):
 
     def shoot(self, obj):
         return BossBullet(self.game_h, self.game_w, int(self.pos[0] + 7), int(self.pos[1] + 8), obj)
+
+    def get_strength(self):
+        return self.strength

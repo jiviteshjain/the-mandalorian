@@ -58,6 +58,7 @@ class Game:
 
         self.boss = None
         self.boss_bullets = []
+        self.boss_time = None
 
         self.dragon = None
         self.dragon_done = False
@@ -199,7 +200,7 @@ class Game:
                 if self.lives <= 0:
                     self.game_over(won=False)
                 else:
-                    pass
+                    self._screen.flash(Back.RED + ' ', self.frame_count, times=1)
 
     def handle_collisions(self):
         self.handle_coin_collisions()
@@ -424,6 +425,7 @@ class Game:
 
         self._screen.flash(Back.YELLOW + ' ', self.frame_count)
         self.boss = Boss(self.height, self.width)
+        self.boss_time = clock()
 
         self.end_boost(forceful=True)
         self.end_dragon(forceful=True)
@@ -434,6 +436,9 @@ class Game:
         self.magnets.clear()
 
     def setup_dragon(self):
+        if self.boss is not None:
+            return
+
         if self.dragon is not None or self.dragon_done:
             return
 
@@ -451,6 +456,13 @@ class Game:
         self.dragon = None
         self.dragon_done = True
 
+    def end_boss(self):
+        if self.boss is None:
+            return
+
+        if clock() - self.boss_time > conf.BOSS_TIME_LIMIT:
+            self.game_over(won=False)
+        
     def check_collision(self, obj_a, obj_b, cheap=False, buffer=False):
         # Buffering only done for second object
         if buffer and not cheap:
@@ -493,6 +505,7 @@ class Game:
 
     def print_info(self):
         print(Style.RESET_ALL + Style.BRIGHT, end='')
+        print('\033[0K', end='')
         print('LIVES:', str(self.lives).rjust(1), end='\t')
         print('COINS:', str(self.money).rjust(3), end='\t')
         print('SCORE:', str(self.score).rjust(5), end='\t')
@@ -501,14 +514,28 @@ class Game:
         
         if self.shield:
             time_left = int(conf.SHIELD_UP_TIME - (clock()- self.shield_time))
-            print('SHIELD ACTIVE:', str(time_left).rjust(2), end='')
+            print('SHIELD ACTIVE:', str(time_left).rjust(2), end='\t')
         else:
             time_left = int(conf.SHIELD_SLEEP_TIME - (clock() - self.shield_time))
             if time_left <= 0:
-                print('SHIELD AVAIL', end='')
+                print('SHIELD AVAIL', end='\t')
             else:
-                print('SHIELD IN:', str(time_left).rjust(2), end='')
-        print('            ', end='')
+                print('SHIELD IN:', str(time_left).rjust(2), end='\t')
+
+        if self.boost is not None:
+            time_left = int(conf.BOOST_UP_TIME - (clock() - self.boost[1]))
+            print('BOOST UNTIL:', str(time_left).rjust(2), end='\t')
+
+        if self.dragon is not None:
+            time_left = int(conf.DRAGON_TIME - (clock() - self.dragon_time))
+            print('DRAGON UNTIL', str(time_left).rjust(2), end='\t')
+        elif not self.dragon_done and self.boss is None:
+            print('DRAGON AVAIL', end='\t')
+
+        if self.boss is not None:
+            time_left = int(conf.BOSS_TIME_LIMIT - (clock() - self.boss_time))
+            print('TIME REMAINING:', str(time_left).rjust(2), end='\t')
+            print('BOSS STRENGTH:', utils.get_bar(conf.BOSS_BAR_WIDTH, self.boss.get_strength(), conf.BOSS_MAX_STRENGTH), end='\t')
 
     def play(self):
         while True:
@@ -529,6 +556,7 @@ class Game:
             self.end_shield()
             self.end_boost()
             self.end_dragon()
+            self.end_boss()
             
             self._screen.print_board(self.frame_count)
             self.print_info()

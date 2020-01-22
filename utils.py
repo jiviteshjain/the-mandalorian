@@ -73,3 +73,14 @@ def vector_decompose(mag, start, end):
         y_force = -y_force
 
     return [x_force, y_force]
+
+def get_bar(length, left, total):
+
+    if left >= total:
+        return Style.BRIGHT + Back.RED + (' ' * length)
+    if left <= 0:
+        return Style.BRIGHT + Back.GREEN + (' ' * length)
+    perc = int(round((left / total) * length))
+    s = Style.BRIGHT + Back.RED + (' ' * perc)
+    s += Back.GREEN + (' ' * (length - perc))
+    return s

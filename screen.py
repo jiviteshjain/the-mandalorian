@@ -113,9 +113,9 @@ class Screen:
                 print(self._back_board[i][(j + frame_count) % self._width] + self._fore_board[i][j], end='')
             print('')
 
-    def flash(self, color, frame_count):
+    def flash(self, color, frame_count, times=3):
         temp = np.array([[color for j in range(self._width)] for i in range(self._height)], dtype='object')
-        for _ in range(3):
+        for _ in range(times):
             print(self.CURSOR_0)
             for i in range(self._height):
                 for j in range(self._width):
