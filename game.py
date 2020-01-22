@@ -13,6 +13,7 @@ from kbhit import KBHit
 from mandalorian import Mandalorian
 import utils
 from boss import Boss
+from dragon import Dragon
 
 #    |
 #  --+-----> Y
@@ -57,6 +58,10 @@ class Game:
 
         self.boss = None
         self.boss_bullets = []
+
+        self.dragon = None
+        self.dragon_done = False
+        self.dragon_time = None
         
     def build_firebeam(self):
         num = random.randint(0, 2)
@@ -106,6 +111,10 @@ class Game:
                 self.build_boss_bullet()
 
     def handle_beam_collisions(self):
+        
+        if self.dragon is not None:
+            return
+
         for fb in self.fire_beams:
             if self.check_collision(self.player, fb):
                 self.lives -= 1
@@ -116,8 +125,13 @@ class Game:
                     self.fire_beams.remove(fb)
 
     def handle_coin_collisions(self):
+        if self.dragon is None:
+            obj = self.player
+        else:
+            obj = self.dragon
+
         for co in self.coins:
-            if self.check_collision(self.player, co, cheap=True, buffer=True):
+            if self.check_collision(obj, co, cheap=True, buffer=True):
                 self.money += 1
                 self.score += conf.SCORE_COIN_FACTOR
                 self.coins.remove(co)
@@ -144,6 +158,10 @@ class Game:
                         self.mandalorian_bullets.remove(bu)
 
     def handle_boost_collisions(self):
+
+        if self.dragon is not None:
+            return
+
         for bo in self.boosts:
             if self.check_collision(self.player, bo, cheap=True):
                 for obj in self.fire_beams:
@@ -188,11 +206,11 @@ class Game:
             if not self.shield:
                 self.handle_boss_bullet_collisions()
 
-    def end_boost(self):
+    def end_boost(self, forceful=False):
         if self.boost is None:
             return
 
-        if clock() - self.boost[1] > conf.BOOST_UP_TIME:
+        if not forceful and clock() - self.boost[1] > conf.BOOST_UP_TIME:
             bo = self.boost[0]
             for obj in self.fire_beams:
                 bo.unaffect(obj)
@@ -208,11 +226,18 @@ class Game:
             self._screen.flash(Back.MAGENTA + ' ', self.frame_count)
 
     def pull_magnet(self):
+
+        if self.dragon is not None:
+            return
+
         if len(self.magnets) != 0:
             for ma in self.magnets:
                 ma.affect(self.player)
 
     def start_shield(self):
+        if self.dragon is not None:
+            return
+
         if self.shield:
             return
 
@@ -281,7 +306,10 @@ class Game:
         for bu in self.mandalorian_bullets:
             self._screen.add(bu)
 
-        self._screen.add(self.player)
+        if self.dragon is None:
+            self._screen.add(self.player)
+        else:
+            self._screen.add(self.dragon)
 
     def move_objs(self):
         for fb in self.fire_beams:
@@ -299,7 +327,10 @@ class Game:
         for bu in self.mandalorian_bullets:
             bu.move()
 
-        self.player.move()
+        if self.dragon is None:
+            self.player.move()
+        else:
+            self.dragon.move()
 
         if self.boss is not None:
             self.boss.follow(self.player)
@@ -324,7 +355,10 @@ class Game:
         for bu in self.mandalorian_bullets:
             bu.reset_acc()
 
-        self.player.reset_acc()
+        if self.dragon is None:
+            self.player.reset_acc()
+        else:
+            self.dragon.reset_acc()
 
         if self.boss is not None:
             self.boss.reset_acc()
@@ -333,6 +367,9 @@ class Game:
                 bu.reset_acc()
 
     def fire(self):
+        if self.dragon is not None:
+            return
+
         pos = self.player.show()[0]
 
         self.mandalorian_bullets.append(MandalorianBullet(self.height, self.width, int(pos[0]) + 1, int(pos[1]) + 2))
@@ -342,13 +379,22 @@ class Game:
             inp = self.keyboard.getch()
 
             if inp in self.PLAY_KEYS:
-                self.player.nudge(inp)
+                if self.dragon is None:
+                    self.player.nudge(inp)
+                else:
+                    self.dragon.nudge(inp)
                 
             elif inp == 'e':
                 self.fire()
 
             elif inp == ' ':
                 self.start_shield()
+
+            elif inp == 'g':
+                self.setup_dragon()
+
+            elif inp == 'q':
+                self.game_over(won=False)
 
             self.keyboard.flush()
 
@@ -372,12 +418,31 @@ class Game:
         self._screen.flash(Back.YELLOW + ' ', self.frame_count)
         self.boss = Boss(self.height, self.width)
 
-        self.end_boost()
+        self.end_boost(forceful=True)
+        self.end_dragon(forceful=True)
         self.fire_beams.clear()
         self.coins.clear()
         self.mandalorian_bullets.clear()
         self.boosts.clear()
         self.magnets.clear()
+
+    def setup_dragon(self):
+        if self.dragon is not None or self.dragon_done:
+            return
+
+        self.dragon_time = clock()
+        self.dragon = Dragon(self.height, self.width)
+        self.end_boost(forceful=True)
+        
+    def end_dragon(self, forceful = False):
+        if self.dragon is None:
+            return
+        
+        if not forceful and clock() - self.dragon_time <= conf.DRAGON_TIME:
+            return
+
+        self.dragon = None
+        self.dragon_done = True
 
     def check_collision(self, obj_a, obj_b, cheap=False, buffer=False):
         # Buffering only done for second object
@@ -442,7 +507,6 @@ class Game:
         while True:
             self.setup_boss()
             start_time = clock()
-            # print(random.randint(0, 4))
             
             self.build_world()
             self.reset_acc_objs()
@@ -457,6 +521,7 @@ class Game:
 
             self.end_shield()
             self.end_boost()
+            self.end_dragon()
             
             self._screen.print_board(self.frame_count)
             self.print_info()
