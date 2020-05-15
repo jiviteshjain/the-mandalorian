@@ -11,6 +11,10 @@ import utils
 from thing import Thing
 
 class FireBeam(Thing):
+    '''
+    firebeam obstacle object
+    uses physics inherited from Thing
+    '''
 
     DIR_HOR = 0 # --
     DIR_VERT = 1 # |
@@ -43,6 +47,10 @@ class FireBeam(Thing):
                 self._repr[i][size - 1 - i] = Back.YELLOW + Style.BRIGHT + Fore.RED + '#'
 
 class Coin(Thing):
+    '''
+    coin object
+    uses physics inherited from Thing
+    '''
 
     def __init__(self, game_height, game_width, x=0, y=0):
         if type(x) != int or type(y) != int:
@@ -53,6 +61,10 @@ class Coin(Thing):
         self._repr = np.array([[Fore.YELLOW + Style.BRIGHT + '$']], dtype='object')
 
 class MandalorianBullet(Thing):
+    '''
+    mandalorian's bullet
+    overrides physics to implement gravity (parabolic paths)
+    '''
     
     def __init__(self, game_height, game_width, x=0, y=0):
         if type(x) != int or type(y) != int:
@@ -64,12 +76,20 @@ class MandalorianBullet(Thing):
         self._vel = np.array([0, conf.MANDALORIAN_BULLET_SPEED], dtype='float32')
 
     def reset_acc(self):
+        '''
+        overriden to add gravity
+        '''
+
         super().reset_acc()
 
         self._acc[0] += conf.GRAVITY_X * 0.1
         self._acc[1] += conf.GRAVITY_Y
 
 class BossBullet(Thing):
+    '''
+    encapsulates the enemy's bullet
+    initially points towards the mandalorian, does not follow continuously, unaffected by gravity
+    '''
 
     def __init__(self, game_height, game_width, x, y, target):
         if type(x) != int or type(y) != int:
@@ -85,11 +105,16 @@ class BossBullet(Thing):
                 Fore.YELLOW + ':', Style.BRIGHT + Fore.YELLOW + "'", ' '],
         ], dtype='object')
 
+        # point towards the mandalorian
         target_pos = target.show()[0]
         vel = utils.vector_decompose(conf.BOSS_BULLET_SPEED, self._pos, target_pos)
         self._vel = np.array(vel, dtype='float32')
 
 class Boost(Thing):
+    '''
+    Boost speeds up the game by adding a backward accelaration to all objects while it is visible
+    '''
+
     def __init__(self, game_height, game_width):
         # places itself
         x = random.randint(conf.SKY_DEPTH, game_height - conf.GND_HEIGHT - 3)
@@ -111,6 +136,10 @@ class Boost(Thing):
         obj.add_acc(np.array([0, conf.BOOST_SPEED], dtype='float32'))
 
 class Magnet(Thing):
+    '''
+    magnet object affects another object by adding an accelaration towards itself
+    '''
+
     def __init__(self, game_height, game_width):
         # places itself
 
@@ -127,17 +156,5 @@ class Magnet(Thing):
     def affect(self, obj):
         pos = obj.show()[0]
         force = utils.vector_decompose(conf.MAGNET_FORCE, pos, self._pos)
-        # x_cap = abs(self.pos[0] - pos[0])
-        # y_cap = abs(self.pos[1] - pos[1])
-
-        # theta = math.atan2(x_cap, y_cap)
-        # x_force = abs(conf.MAGNET_FORCE * math.sin(theta))
-        # y_force = abs(conf.MAGNET_FORCE * math.cos(theta))
-
-        # if self.pos[0] < pos[0]:
-        #     x_force = -x_force
-            
-        # if self.pos[1] < pos[1]:
-        #     y_force = -y_force
 
         obj.add_acc(np.array(force, dtype='float32'))

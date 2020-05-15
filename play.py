@@ -6,6 +6,6 @@ from game import Game
 import config as conf
 
 cinit()
-print('\033[2J')
+print('\033[2J') # clear screen
 game = Game()
 game.play()

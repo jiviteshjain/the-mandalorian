@@ -32,11 +32,17 @@ class Mandalorian(Thing):
         self._shield = False
 
     def is_out(self):
+        '''
+        overriden to return false as soon as any part of the object goes off screen, because mandalorian can not go off screen
+        '''
         # T, L, B, R
-        # Checks if entire mandalorian is on screen
         return (self._pos[0] < 0), (self._pos[1] < 0), (self._pos[0] + self._size[0] - 1 >= self._game_h), (self._pos[1] + self._size[1] - 1 >= self._game_w)
 
     def show(self):
+        '''
+        overriden to accomodate shield
+        '''
+
         if not self._shield:
             return np.round(self._pos).astype(np.int32), self._size, self._repr
         else:
@@ -56,11 +62,17 @@ class Mandalorian(Thing):
             self._acc[1] += conf.KEY_FORCE
 
     def reset_acc(self):
+        '''
+        overriden to accomodate gravity and drag force
+        '''
+
         super().reset_acc()
 
         self._acc[0] += conf.GRAVITY_X
         self._acc[1] += conf.GRAVITY_Y
 
+        # drag force added so that velocity changes due to user inputs do not accumulate
+        # drag force tends to align the player's velocities to the game's velocity
         if (self._vel[1] + conf.GAME_SPEED) > 0:
             drag = -conf.DRAG_COEFF * ((self._vel[1] + conf.GAME_SPEED)** 2)
         else:
@@ -71,7 +83,7 @@ class Mandalorian(Thing):
     def move(self):
         super().move()
 
-        t, l, b, r = self.is_out()
+        t, l, b, r = self.is_out() # don't let it go out
 
         if l:
             if self._vel[1] < 0:

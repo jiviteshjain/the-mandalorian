@@ -36,25 +36,36 @@ class Dragon(Thing):
                             [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ']], dtype='object')
 
     def shift_up(self):
+        '''
+        shift the head up
+        '''
+
         temp = np.array([[' ' for j in range(self._head.shape[1])] for i in range(self._head.shape[0])], dtype='object')
         for i in range(1, self._head.shape[0]):
             temp[i - 1] = self._head[i]
         self._head = temp
 
     def shift_down(self):
+        '''
+        shift the head down
+        '''
+
         temp = np.array([[' ' for j in range(self._head.shape[1])] for i in range(self._head.shape[0])], dtype='object')
         for i in range(self._head.shape[0] - 1):
             temp[i + 1] = self._head[i]
         self._head = temp
 
     def nudge(self, key):
+        '''
+        only vertical motion allowed
+        '''
+
         if key == 'w':
             self._acc[0] -= conf.KEY_FORCE
 
     def reset_acc(self):
         super().reset_acc()
         self._acc[0] += conf.GRAVITY_X
-        # self.acc[1] += conf.GRAVITY_Y
 
 
     def show(self):
@@ -63,6 +74,7 @@ class Dragon(Thing):
         total_range = 2 * math.pi
         part = total_range / w
 
+        # use a sine wave shifted by self._phase (internally increased after each show) to simulate wavy movement
         input_arr = [(-math.pi + (i * part) + self._phase) for i in range(w)]
         sin_arr = np.sin(np.array(input_arr, dtype='float32')) * (3)
 
@@ -74,7 +86,8 @@ class Dragon(Thing):
                 dragon[i][j] = ' '
 
         dragon = np.concatenate((dragon, self._head), axis=1)
-
+        
+        # move the head up or down to roughly sync with sine wave's end
         self._phase += 0.5
         self._big_count += 1
         if self._big_count % 3 == 0:

@@ -23,6 +23,9 @@ from dragon import Dragon
 #    X
 
 class Game:
+    '''
+    encapsulates the entire game logic
+    '''
 
     PLAY_KEYS = ('w', 'a', 'd')
     CONTROL_KEYS = ('q', )
@@ -66,6 +69,8 @@ class Game:
         
     def build_firebeam(self):
         num = random.randint(0, 2)
+
+        # be careful about placing them roughly apart
         if num != 0:
             part = (self._height - conf.SKY_DEPTH - conf.GND_HEIGHT) / num
             for i in range(num):
@@ -95,6 +100,10 @@ class Game:
         self._boss_bullets.append(self._boss.shoot(self._player))
 
     def build_world(self):
+        '''
+        build the various things
+        '''
+
         if self._boss is None:
             if self._frame_count % conf.MIN_BEAM_DIST_X == 0:
                 self.build_firebeam()
@@ -145,12 +154,10 @@ class Game:
                     self._score += conf.SCORE_BEAM_FACTOR
                     self._fire_beams.remove(fb)
                     hit = True
-                    # self.mandalorian_bullets.remove(bu)
 
             if self._boss is not None:
                 if self.check_collision(self._boss, bu, cheap=False, buffer=False):
                     self._score += conf.SCORE_BOSS_HIT_FACTOR
-                    # self.mandalorian_bullets.remove(bu)
                     hit = True
                     if self._boss.take_hit():
                         raise self.game_over(won=True)
@@ -159,10 +166,9 @@ class Game:
                     if self.check_collision(fi, bu, cheap=True, buffer=True):
                         self._score += conf.SCORE_BOSS_BULLET_FACTOR
                         self._boss_bullets.remove(fi)
-                        # self.mandalorian_bullets.remove(bu)
                         hit = True
 
-            if hit:
+            if hit: # only remove the bullet once, it could have hit multiple things at times
                 self._mandalorian_bullets.remove(bu)
 
     def handle_boost_collisions(self):
@@ -203,6 +209,10 @@ class Game:
                     self._screen.flash(Back.RED + ' ', self._frame_count, times=1)
 
     def handle_collisions(self):
+        '''
+        handle collisions between various things
+        '''
+
         self.handle_coin_collisions()
         self.handle_mandalorian_bullet_collisions()
         self.handle_boost_collisions()
@@ -215,6 +225,11 @@ class Game:
                 self.handle_boss_bullet_collisions()
 
     def end_boost(self, forceful=False):
+        '''
+        check if boost time is up, and end the boost
+        if forceful, end boost anyways
+        '''
+
         if self._boost is None:
             return
 
@@ -266,6 +281,10 @@ class Game:
             self._screen.flash(Back.CYAN + ' ', self._frame_count)
 
     def remove_old_objs(self):
+        '''
+        remove objects that are past the viewport to prevent wasted computations
+        '''
+
         for fb in self._fire_beams:
             if fb.is_out()[1]:
                 self._fire_beams.remove(fb)
@@ -292,6 +311,10 @@ class Game:
                     self._boss_bullets.remove(bu)
 
     def paint_objs(self):
+        '''
+        add everything to the screen
+        '''
+
         for fb in self._fire_beams:
             self._screen.add(fb)
 
@@ -320,6 +343,10 @@ class Game:
             self._screen.add(self._dragon)
 
     def move_objs(self):
+        '''
+        move everything
+        '''
+
         for fb in self._fire_beams:
             fb.move()
 
@@ -348,6 +375,10 @@ class Game:
                 bu.move()
 
     def reset_acc_objs(self):
+        '''
+        reset acceralations of all objects, as accelarations are computed in each frame
+        '''
+
         for fb in self._fire_beams:
             fb.reset_acc()
 
@@ -404,7 +435,7 @@ class Game:
             elif inp == 'q':
                 self.game_over(won=False)
 
-            self._keyboard.flush()
+            self._keyboard.flush() # to prevent keystrokes being piled up as input rate is faster than frame rate
 
     def game_over(self, won=False):
         sleep(1)
@@ -417,6 +448,10 @@ class Game:
         raise SystemExit
     
     def setup_boss(self):
+        '''
+        clear the rest of the objects, disable dragon and show the boss
+        '''
+
         if self._boss is not None:
             return
 
@@ -447,6 +482,11 @@ class Game:
         self.end_boost(forceful=True)
         
     def end_dragon(self, forceful = False):
+        '''
+        check if dragon time is up, and end the dragon powerup
+        also end if forceful
+        '''
+
         if self._dragon is None:
             return
         
@@ -464,7 +504,14 @@ class Game:
             self.game_over(won=False)
         
     def check_collision(self, obj_a, obj_b, cheap=False, buffer=False):
-        # Buffering only done for second object
+        '''
+        check collisions between two objects
+        for small objects, add option of buffering (increasing size of objects) to prevent false negatives
+        at high velocities
+        for rectangular objects, or when there are many of a type, cheap detection only checks their bounding boxes
+        '''
+
+
         if buffer and not cheap:
             raise ValueError
 
@@ -474,12 +521,12 @@ class Game:
         
 
         a_rec = [a_pos[0], a_pos[0] + a_size[0] - 1, a_pos[1], a_pos[1] + a_size[1] - 1]
-        if buffer:
+        if buffer: # add extra padding to small object b
             b_rec = [b_pos[0] - 1, b_pos[0] + b_size[0], b_pos[1] - 1, b_pos[1] + b_size[1]]
         else:
             b_rec = [b_pos[0], b_pos[0] + b_size[0] - 1, b_pos[1], b_pos[1] + b_size[1] - 1]
 
-        bump, common = utils.intersect(a_rec, b_rec)
+        bump, common = utils.intersect(a_rec, b_rec) # bounding box check
         
         if cheap or buffer:
             return bump
@@ -490,6 +537,7 @@ class Game:
         a_idx = [common[0] - a_pos[0], common[1] - a_pos[0] + 1, common[2] - a_pos[1], common[3] - a_pos[1] + 1]
         b_idx = [common[0] - b_pos[0], common[1] - b_pos[0] + 1, common[2] - b_pos[1], common[3] - b_pos[1] + 1]
 
+        # check in common region if any cell has both of them as non whitespace
         for i in range(common[1] + 1 - common[0]):
             for j in range(common[3] + 1 - common[2]):
                 a_i = a_idx[0] + i
@@ -504,6 +552,11 @@ class Game:
         return False
 
     def print_info(self):
+        '''
+        print the info below the screen
+        '''
+        # TODO: should be in screen class: but requires a lot of information being passed
+
         print(Style.RESET_ALL + Style.BRIGHT, end='')
         print('\033[0K', end='')
         print('LIVES:', str(self._lives).rjust(1), end='\t')
@@ -542,6 +595,7 @@ class Game:
             self.setup_boss()
             start_time = clock()
             
+            # internal logic
             self.build_world()
             self.reset_acc_objs()
             self.handle_input()
@@ -550,9 +604,11 @@ class Game:
             self.remove_old_objs()
             self.handle_collisions()
             
+            # show to user
             self._screen.clear()
             self.paint_objs()
 
+            # after this frame checks
             self.end_shield()
             self.end_boost()
             self.end_dragon()
@@ -562,7 +618,7 @@ class Game:
             self.print_info()
             self._frame_count += 1
             self._score += conf.SCORE_TIME_FACTOR
-            while clock() - start_time < 0.1:
+            while clock() - start_time < 0.1: # frame rate
                 pass
             
 

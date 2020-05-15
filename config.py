@@ -1,3 +1,9 @@
+'''
+this file contains all relevant game constants
+'''
+
+# probabilities heavily depend on frame rate
+
 from colorama import Fore, Back, Style
 
 BUFFER_RIGHT = 10

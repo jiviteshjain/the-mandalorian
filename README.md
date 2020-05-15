@@ -1,5 +1,4 @@
 # the-mandalorian
-*Jivitesh Jain 2018101092 Assignment 1 DASS*
 
 ## Introduction
 This is a CLI platformer arcade game written in Python 3, heavily inspired by Jetpack Joyride.\
